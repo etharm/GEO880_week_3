@@ -109,3 +109,26 @@ caro60%>%
 # rows in caro60 will be removed. Segments with 4 or less rows have a sum of 10 or less. (1+2+3+4)
 
 #-------------------------------------------------------------------------------------------------------------------------
+
+#TASK 5: SIMILARITY MEASUREMENTS
+
+pedestrian <- read_delim("pedestrian.csv",",") # adjust path
+
+
+pedestrian$TrajID<-as.factor(pedestrian$TrajID)
+pedestrian$TrajID2<-pedestrian$TrajID
+
+
+ggplot(data=pedestrian, aes(E, N)) +
+geom_point(data=pedestrian[,2:5], color="grey")+
+geom_point(aes(alpha=TrajID))+
+geom_point(aes(colour=as.factor(TrajID))) +
+facet_wrap(~TrajID, labeller = labeller(TrajID = c("1" = "TrajID: 1", "2" = "TrajID: 2", "3" = "TrajID: 3", "4" = "TrajID: 4", "5" = "TrajID: 5", "6" = "TrajID: 6"))) +
+geom_path(aes(color=TrajID))+                 
+theme(legend.position = "none") +
+labs(title = "Visual comparison of the 6 trajectories", subtitle = "Each subplot highlights a trajectory") +
+coord_equal()
+
+#-------------------------------------------------------------------------------------------------------------------------
+
+
