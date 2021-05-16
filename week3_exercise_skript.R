@@ -50,3 +50,13 @@ caro60$static <- caro60$stepMean < mean(caro60$stepMean)
 
 #-------------------------------------------------------------------------------------------------------------------------
 
+#TASK 3: VISUALIZE SEGMENTED TRAJECTORIES
+
+caro60%>%
+  ggplot(aes(E, N))  +
+  geom_point(aes(colour = static)) +
+  geom_path() +
+  theme(legend.position = "right") +
+  coord_equal()
+
+#-------------------------------------------------------------------------------------------------------------------------
