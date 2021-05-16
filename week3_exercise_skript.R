@@ -128,6 +128,7 @@ geom_path(aes(color=TrajID))+
 theme(legend.position = "none") +
 labs(title = "Visual comparison of the 6 trajectories", subtitle = "Each subplot highlights a trajectory") +
 coord_equal()
+#text
 
 #-------------------------------------------------------------------------------------------------------------------------
 
