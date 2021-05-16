@@ -36,7 +36,7 @@ caro60$PosP3 <- sqrt((caro60$E-lead(caro60$E,3))^2+(caro60$N-lead(caro60$N,3))^2
 caro60 <- caro60 %>%
   rowwise() %>%
   mutate(
-    stepMean = mean(c(PosM3, PosM2, PosM1, PosP1, PosP2, PosP3), na.rm=TRUE) #na.rm to get mean values for first and last 3 rows
+    stepMean = mean(c(PosM3, PosM2, PosM1, PosP1, PosP2, PosP3))
   ) %>%
   ungroup() 
 
@@ -44,9 +44,9 @@ caro60 <- caro60 %>%
 
 ggplot(caro60) + geom_histogram(mapping = aes(stepMean))
 
-#Threshold (below mean of stepMean => static=True)
+#Threshold (above mean of stepMean => static=True)
 
-caro60$static <- caro60$stepMean < mean(caro60$stepMean)
+caro60$static <- caro60$stepMean < mean(caro60$stepMean, na.rm=TRUE)
 
 #-------------------------------------------------------------------------------------------------------------------------
 
@@ -58,5 +58,54 @@ caro60%>%
   geom_path() +
   theme(legend.position = "right") +
   coord_equal()
+
+#-------------------------------------------------------------------------------------------------------------------------
+
+#TASK 4: SEGMENT-BASED ANALYSIS
+
+# it assigns unique IDs based on the column static
+
+rle_id <- function(vec){
+  x <- rle(vec)$lengths
+  as.factor(rep(seq_along(x), times=x))
+}
+
+# all following TRUE same ID until first FALSE. New ID for following FALSE
+
+caro60 <- caro60%>%
+  mutate(segment_ID = rle_id(static))
+
+# Plot with just moving segments
+  
+caro60%>%
+  filter(static == FALSE) %>% #Filter out non-moving segments
+  ggplot(aes(E, N))  +
+  geom_point(aes(colour = segment_ID)) +
+  geom_path(aes(colour = segment_ID)) +
+  theme(legend.position = "none") +
+  ggtitle("All moving segments")
+  coord_equal()
+
+# Plot with just long moving segments(>=5)
+
+caro60$lengths <- sequence(rle(as.character(caro60$static))$lengths) # 1,2,3.. for each column as long as static FALSE or TRUE
+
+Stats <- caro60 %>% group_by(segment_ID) %>% #calculate sum of lengths for each segment_ID
+  summarize(longSeg = sum(lengths))
+
+caro60 <- merge(caro60, Stats)
+
+
+caro60%>%
+  filter(static == FALSE & longSeg > 10) %>% #Filter out non-moving segments and short moving segments 
+  ggplot(aes(E, N))  +
+  geom_point(aes(colour = segment_ID)) +
+  geom_path(aes(colour = segment_ID)) +
+  theme(legend.position = "none") +
+  ggtitle("Long segments (>=5)") +
+  coord_equal()
+
+#IF longSeg > 10 not enough segments are removed.The task was to remove segments <5. Therefore segments, which are only represented with 4 or less
+# rows in caro60 will be removed. Segments with 4 or less rows have a sum of 10 or less. (1+2+3+4)
 
 #-------------------------------------------------------------------------------------------------------------------------
