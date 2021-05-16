@@ -30,4 +30,23 @@ caro60$PosP3 <- sqrt((caro60$E-lead(caro60$E,3))^2+(caro60$N-lead(caro60$N,3))^2
 
 #-------------------------------------------------------------------------------------------------------------------------
 
+#TASK 2: SPECIFY AND APPLY THRESHOLD d
+
+#Adding new column with mean values
+caro60 <- caro60 %>%
+  rowwise() %>%
+  mutate(
+    stepMean = mean(c(PosM3, PosM2, PosM1, PosP1, PosP2, PosP3), na.rm=TRUE) #na.rm to get mean values for first and last 3 rows
+  ) %>%
+  ungroup() 
+
+#Histogram
+
+ggplot(caro60) + geom_histogram(mapping = aes(stepMean))
+
+#Threshold (below mean of stepMean => static=True)
+
+caro60$static <- caro60$stepMean < mean(caro60$stepMean)
+
+#-------------------------------------------------------------------------------------------------------------------------
 
