@@ -5,6 +5,7 @@ library(sf)
 library(terra)        
 library(lubridate)    
 library(tidyr)
+library(SimilarityMeasures)
 #-------------------------------------------------------------------------------------------------------------------------
 
 #import data
@@ -112,7 +113,7 @@ caro60%>%
 
 #TASK 5: SIMILARITY MEASUREMENTS
 
-pedestrian <- read_delim("pedestrian.csv",",") # adjust path
+pedestrian <- read_delim("pedestrian.csv",",")
 
 
 pedestrian$TrajID<-as.factor(pedestrian$TrajID)
@@ -128,8 +129,96 @@ geom_path(aes(color=TrajID))+
 theme(legend.position = "none") +
 labs(title = "Visual comparison of the 6 trajectories", subtitle = "Each subplot highlights a trajectory") +
 coord_equal()
-#text
-
+ 
 #-------------------------------------------------------------------------------------------------------------------------
 
+#TASK 6: CALCULATE SIMILARITY
 
+# Numeric matrix with 3 colums (TrajID,E,N)
+
+ped1 <- data.matrix(filter(pedestrian[,1:3], TrajID==1))
+ped2 <- data.matrix(filter(pedestrian[,1:3], TrajID==2))
+ped3 <- data.matrix(filter(pedestrian[,1:3], TrajID==3))
+ped4 <- data.matrix(filter(pedestrian[,1:3], TrajID==4))
+ped5 <- data.matrix(filter(pedestrian[,1:3], TrajID==5))
+ped6 <- data.matrix(filter(pedestrian[,1:3], TrajID==6))
+
+#DTW
+
+DTW1 <- DTW(ped1,ped1)
+DTW2 <- DTW(ped1,ped2)
+DTW3 <- DTW(ped1,ped3)
+DTW4 <- DTW(ped1,ped4)
+DTW5 <- DTW(ped1,ped5)
+DTW6 <- DTW(ped1,ped6)
+
+#EditDist
+
+editDist1 <- EditDist(ped1,ped1)
+editDist2 <- EditDist(ped1,ped2)
+editDist3 <- EditDist(ped1,ped3)
+editDist4 <- EditDist(ped1,ped4)
+editDist5 <- EditDist(ped1,ped5)
+editDist6 <- EditDist(ped1,ped6)
+
+#Frechet
+
+frechet1 <- Frechet(ped1,ped1)
+frechet2 <- Frechet(ped1,ped2)
+frechet3 <- Frechet(ped1,ped3) #Error: The Frechet distance was unable to be found
+frechet4 <- Frechet(ped1,ped4)
+frechet5 <- Frechet(ped1,ped5)
+frechet6 <- Frechet(ped1,ped6)
+
+#LCSS
+
+LCSS1 <- LCSS(ped1,ped1, 2,2,0.5)
+LCSS2 <- LCSS(ped1,ped2, 2,2,0.5)
+LCSS3 <- LCSS(ped1,ped3, 2,2,0.5)
+LCSS4 <- LCSS(ped1,ped4, 2,2,0.5)
+LCSS5 <- LCSS(ped1,ped5, 2,2,0.5)
+LCSS6 <- LCSS(ped1,ped6, 2,2,0.5)
+
+
+#Combinte to dataframe
+
+dtw <- c(DTW1,DTW2,DTW3,DTW4,DTW5,DTW6)
+editDist <- c(editDist1,editDist2,editDist3,editDist4,editDist5,editDist6)
+frechet <- c(frechet1,frechet2,frechet3,frechet4,frechet5,frechet6)
+lcss <- c(LCSS1,LCSS2,LCSS3,LCSS4,LCSS5,LCSS6)
+
+similarity.df <- data.frame(dtw,editDist,frechet,lcss)
+similarity.df$tj <- c(1,2,3,4,5,6)
+
+#Plot
+
+require(gridExtra)
+
+pl1<- ggplot(data=similarity.df, aes(tj, dtw)) +
+  geom_bar(stat = "identity") +
+  theme(legend.position = "none") +
+  ggtitle("DTW")
+
+pl2 <- ggplot(data=similarity.df, aes(tj, editDist)) +
+  geom_bar(stat = "identity") +
+  theme(legend.position = "none") +
+  ggtitle("editDist")
+
+pl3 <- ggplot(data=similarity.df, aes(tj, frechet)) +
+  geom_bar(stat = "identity") +
+  theme(legend.position = "none") +
+  ggtitle("Frechet")
+
+pl4 <- ggplot(data=similarity.df, aes(tj, lcss)) +
+  geom_bar(stat = "identity") +
+  theme(legend.position = "none") +
+  ggtitle("LCSS")
+
+grid.arrange(pl1,pl2,pl3,pl4, ncol=2, nrow=2)
+
+# DTW: DTW is 0 if both axis represent same trajectory. Therefore I guess trajectory 3 is most different from trajectory 1.
+# editDist: 0 edits needed if both trajectories are equal. Trajectory 3 needs most edit to look like trajectory 1.
+# Frechet: #Error: The Frechet distance was unable to be found. Hard to interpret.
+# LCSS: It makes sense that LCSS value is high, when plotting two identical trajectories (Two people doing gymnastics, where
+# one copies every movement exacty in time and space. LCSS values will increase for other trajectories, if larger buffers for deviations 
+#in space and time are chosen)
